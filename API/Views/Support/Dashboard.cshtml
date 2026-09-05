@@ -1,0 +1,140 @@
+@model Application.DTOs.Dashboard.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Support Dashboard";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 20px; color: #1a1a2e; }
+        .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card {
+            background: #fff; border-radius: 8px; padding: 20px; flex: 1; min-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;
+        }
+        .stat-card h3 { font-size: 2em; margin-bottom: 4px; }
+        .stat-card p { color: #666; font-size: 0.9em; }
+        .stat-card.open h3 { color: #e67e22; }
+        .stat-card.inprogress h3 { color: #3498db; }
+        .stat-card.resolved h3 { color: #27ae60; }
+        .stat-card.closed h3 { color: #95a5a6; }
+        .stat-card.total h3 { color: #2c3e50; }
+        .filters { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .filters select, .filters button {
+            padding: 8px 16px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;
+        }
+        .filters button { background: #3498db; color: white; border: none; cursor: pointer; }
+        .filters button:hover { background: #2980b9; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th { background: #2c3e50; color: #fff; padding: 12px 16px; text-align: left; font-weight: 500; }
+        td { padding: 10px 16px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f8f9fa; }
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600;
+        }
+        .badge-open { background: #ffeaa7; color: #d68910; }
+        .badge-inprogress { background: #dfe6e9; color: #2980b9; }
+        .badge-resolved { background: #d5f5e3; color: #1e8449; }
+        .badge-closed { background: #eaecee; color: #7f8c8d; }
+        .badge-low { background: #d5f5e3; color: #27ae60; }
+        .badge-medium { background: #fdebd0; color: #e67e22; }
+        .badge-high { background: #fadbd8; color: #e74c3c; }
+        .badge-critical { background: #e74c3c; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Support Dashboard</h1>
+
+        <div class="stats">
+            <div class="stat-card total">
+                <h3>@Model.TotalTickets</h3>
+                <p>Total Tickets</p>
+            </div>
+            <div class="stat-card open">
+                <h3>@Model.OpenTickets</h3>
+                <p>Open</p>
+            </div>
+            <div class="stat-card inprogress">
+                <h3>@Model.InProgressTickets</h3>
+                <p>In Progress</p>
+            </div>
+            <div class="stat-card resolved">
+                <h3>@Model.ResolvedTickets</h3>
+                <p>Resolved</p>
+            </div>
+            <div class="stat-card closed">
+                <h3>@Model.ClosedTickets</h3>
+                <p>Closed</p>
+            </div>
+        </div>
+
+        <form method="get" action="/support/dashboard" class="filters">
+            <label>Status:</label>
+            <select name="status">
+                <option value="">All</option>
+                <option value="Open" selected="@(Model.FilterStatus?.ToString() == "Open")">Open</option>
+                <option value="InProgress" selected="@(Model.FilterStatus?.ToString() == "InProgress")">In Progress</option>
+                <option value="Resolved" selected="@(Model.FilterStatus?.ToString() == "Resolved")">Resolved</option>
+                <option value="Closed" selected="@(Model.FilterStatus?.ToString() == "Closed")">Closed</option>
+            </select>
+            <label>Priority:</label>
+            <select name="priority">
+                <option value="">All</option>
+                <option value="Low" selected="@(Model.FilterPriority?.ToString() == "Low")">Low</option>
+                <option value="Medium" selected="@(Model.FilterPriority?.ToString() == "Medium")">Medium</option>
+                <option value="High" selected="@(Model.FilterPriority?.ToString() == "High")">High</option>
+                <option value="Critical" selected="@(Model.FilterPriority?.ToString() == "Critical")">Critical</option>
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ticket #</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Created By</th>
+                    <th>Assigned Agent</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Tickets.Any())
+                {
+                    @foreach (var ticket in Model.Tickets)
+                    {
+                        <tr>
+                            <td><strong>@ticket.TicketNumber</strong></td>
+                            <td>@ticket.Title</td>
+                            <td><span class="badge badge-@ticket.Status.ToLower()">@ticket.Status</span></td>
+                            <td><span class="badge badge-@ticket.Priority.ToLower()">@ticket.Priority</span></td>
+                            <td>@ticket.CreatedBy</td>
+                            <td>@(ticket.AssignedAgent ?? "—")</td>
+                            <td>@ticket.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@ticket.UpdatedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 20px; color: #999;">No tickets found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
